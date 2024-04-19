@@ -18,9 +18,7 @@ public class ChatMassage {
         this.text = text;
         this.time = time;
 
-        if (senderid.equals(FirebaseAuth.getInstance().getCurrentUser().getUid())) {
-            isMine = true;
-        }
+
     }
 
     public ChatMassage() {
@@ -52,7 +50,11 @@ public class ChatMassage {
     }
 
     public boolean isMine() {
-        return isMine;
+        if (senderid.equals(FirebaseAuth.getInstance().getCurrentUser().getUid())) {
+            return true;
+        }
+
+        return false;
     }
 
     public void setMine(boolean mine) {
