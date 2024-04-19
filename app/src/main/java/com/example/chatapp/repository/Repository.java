@@ -7,6 +7,7 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.chatapp.model.ChatGroup;
+import com.example.chatapp.model.ChatMassage;
 import com.example.chatapp.views.GroupsActivity;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -27,12 +28,17 @@ public class Repository {
 
     FirebaseDatabase database;
     DatabaseReference reference;
+    DatabaseReference groupReference;
+
+    MutableLiveData<List<ChatMassage>> messagesLiveDate;
+
 
 
     public Repository() {
         this.chatGroupMutableLiveData = new MutableLiveData<>();
         database = FirebaseDatabase.getInstance();
         reference = database.getReference();
+        messagesLiveDate = new MutableLiveData<>();
     }
 
     public void firebaseAnonymousAuth(Context context) {
@@ -90,4 +96,59 @@ public class Repository {
 
         return chatGroupMutableLiveData;
     }
+
+    public void createNewChatGroup(String groupName) {
+        reference.child(groupName).setValue(groupName);
+    }
+
+
+    public MutableLiveData<List<ChatMassage>> getMessagesLiveDate(String groupName) {
+
+        groupReference = database.getReference().child(groupName);
+        List<ChatMassage> messagesList = new ArrayList<>();
+
+        groupReference.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                messagesList.clear();
+
+                for (DataSnapshot dataSnapshot : snapshot.getChildren()) {
+                    ChatMassage message = dataSnapshot.getValue(ChatMassage.class);
+                    messagesList.add(message);
+                }
+
+                messagesLiveDate.postValue(messagesList);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+
+        return messagesLiveDate;
+    }
+
+    public void sendMessage(String messageText, String chatGroup) {
+
+        DatabaseReference ref = database
+                .getReference(chatGroup);
+
+        if (!messageText.trim().equals("")) {
+            ChatMassage msg = new ChatMassage(
+                    FirebaseAuth.getInstance().getCurrentUser().getUid(),
+                    messageText,
+                    System.currentTimeMillis()
+            );
+
+            String randomKey = ref.push().getKey();
+            ref.child(randomKey).setValue(msg);
+
+        }
+
+
+    }
+
+
+
 }
